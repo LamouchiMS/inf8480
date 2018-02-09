@@ -42,20 +42,48 @@ public class LockManager {
         String clientID = null;
         for (MyFile f : files) {
             if (f.getName().equalsIgnoreCase(fileName)) {
-                clientID = f.getName();
+                clientID = f.getLockClientID();
             }
         }
         return clientID;
     }
 
-    public boolean lock(String fileName, String lockClientID) {
+    private void syncLockFile() {
         try {
-            FileWriter fw = new FileWriter(LOCK_FILE_NAME, true);
-            fw.write(fileName + "\t" + lockClientID + System.lineSeparator());
+            FileWriter fw = new FileWriter(LOCK_FILE_NAME, false);
+            for (MyFile f : files) {
+                fw.write(f.getName() + "\t" + f.getLockClientID() + System.lineSeparator());
+            }
             fw.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return true;
+    }
+
+    public void lock(String fileName, String lockClientID) {
+        MyFile f = new MyFile(fileName, lockClientID);
+        files.add(f);
+        syncLockFile();
+    }
+
+    public void unlock(String fileName) {
+        int idx = -1;
+        for (int i = 0; i < files.size() && idx == -1; i++) {
+            if (files.get(i).getName().equalsIgnoreCase(fileName)) {
+                idx = i;
+            }
+        }
+        files.remove(idx);
+        syncLockFile();
+    }
+
+    public boolean tryLock(String fileName, String lockClientID) {
+        String currentLockID = getLockClientID(fileName);
+        if (currentLockID == null || currentLockID.equalsIgnoreCase(lockClientID)) {
+            lock(fileName, lockClientID);
+            return true;
+        } else {
+            return false;
+        }
     }
 }

@@ -29,6 +29,10 @@ public class MyFile {
         return this.content;
     }
 
+    public void setLockClientID(String clientID) {
+        this.lockClientID = clientID;
+    }
+
     public void setContent(String content) {
         this.content = content;
     }

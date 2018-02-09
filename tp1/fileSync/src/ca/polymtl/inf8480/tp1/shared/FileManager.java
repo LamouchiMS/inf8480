@@ -14,8 +14,7 @@ public class FileManager {
 
     public MyFile lock(String fileName, String clientID, String checksum) {
         MyFile result = null;
-        String currentLockClientID = lm.getLockClientID(fileName);
-        if (currentLockClientID.equals(clientID)) {
+        if (lm.tryLock(fileName, clientID)) {
             String content = isSameChecksum(fileName, checksum) ? null : readFile(fileName);
             result = new MyFile(fileName, clientID, content);
         }
@@ -40,6 +39,22 @@ public class FileManager {
         }
 
         return checksum;
+    }
+
+    public boolean writeFile(String fileName, String content, String clientID) {
+        if (lm.getLockClientID(fileName).equalsIgnoreCase(clientID)) {
+            try {
+                FileWriter fw = new FileWriter(fileName, false);
+                fw.write(content);
+                lm.unlock(fileName);
+                fw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public String readFile(String fileName) {
