@@ -1,6 +1,9 @@
 package ca.polymtl.inf8480.tp1.shared;
 
-public class MyFile {
+import java.io.Serializable;
+
+public class MyFile implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String name;
     private String lockClientID;
     private String content;
@@ -35,5 +38,10 @@ public class MyFile {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

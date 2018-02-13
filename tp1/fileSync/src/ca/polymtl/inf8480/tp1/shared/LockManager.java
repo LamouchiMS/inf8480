@@ -23,16 +23,22 @@ public class LockManager {
             String[] contentLines = content.split(System.lineSeparator());
             for (String contentLine : contentLines) {
                 String[] parts = contentLine.split("\t");
-                String name = parts[0];
-                String lockClientID = parts[1];
-                MyFile f = new MyFile(name, lockClientID);
-
-                this.files.add(f);
+                if (parts.length >= 2) {
+                    String name = parts[0];
+                    String lockClientID = parts[1];
+                    MyFile f = new MyFile(name, lockClientID);
+                    this.files.add(f);
+                }
             }
 
             br.close();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            try {
+                File file = new File(LOCK_FILE_NAME);
+                file.createNewFile();
+            } catch (IOException ee) {
+                ee.printStackTrace();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

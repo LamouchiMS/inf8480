@@ -68,8 +68,9 @@ public class Server implements ServerInterface {
     @Override
     public ArrayList<MyFile> syncLocalDirectory() throws RemoteException {
         ArrayList<MyFile> files = fileManager.listFiles();
+        System.out.println(files);
         for (MyFile f : files) {
-            f.setContent(fileManager.readFile(f.getContent()));
+            f.setContent(FileManager.readFile(f.getName()));
         }
         return files;
     }
@@ -79,12 +80,12 @@ public class Server implements ServerInterface {
         if (fileManager.isSameChecksum(name, checksum)) {
             return null;
         } else {
-            return fileManager.readFile(name);
+            return FileManager.readFile(name);
         }
     }
 
     @Override
     public boolean push(String name, String content, String clientID) throws RemoteException {
-        return false;
+        return fileManager.writeFile(name, content, clientID);
     }
 }

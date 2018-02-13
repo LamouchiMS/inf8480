@@ -28,7 +28,12 @@ public class ClientManager {
 
             br.close();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            try {
+                File file = new File(CLIENT_MANAGER_NAME);
+                file.createNewFile();
+            } catch (IOException ee) {
+                ee.printStackTrace();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

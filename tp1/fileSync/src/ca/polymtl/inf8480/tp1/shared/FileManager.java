@@ -22,7 +22,7 @@ public class FileManager {
         return result;
     }
 
-    public String getChecksum(String fileName) {
+    public static String getChecksum(String fileName) {
         String checksum = null;
         try {
             String content = readFile(fileName);
@@ -57,7 +57,7 @@ public class FileManager {
         }
     }
 
-    public String readFile(String fileName) {
+    public static String readFile(String fileName) {
         String content = null;
         try {
             BufferedReader br = new BufferedReader(new FileReader(fileName));
