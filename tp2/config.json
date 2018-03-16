@@ -1,0 +1,5 @@
+{
+    "ipLoadBalancer": "0.0.0.0",
+    "ipRepository": "1.1.1.1",
+    "loadBalancerIsSecure": true
+}
