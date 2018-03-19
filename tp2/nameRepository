@@ -5,4 +5,4 @@ popd > /dev/null
 java -cp "$basepath"/nameRepository.jar:"$basepath"/shared.jar \
   -Djava.rmi.nameRepository.codebase=file:"$basepath"/shared.jar \
   -Djava.security.policy="$basepath"/policy \
-  ca.polymtl.inf8480.tp2.nameRepository.NameRepository
+  ca.polymtl.inf8480.tp2.nameRepository.NameRepository $*

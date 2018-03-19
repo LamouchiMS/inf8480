@@ -5,4 +5,4 @@ popd > /dev/null
 java -cp "$basepath"/loadBalancer.jar:"$basepath"/shared.jar \
   -Djava.rmi.loadBalancer.codebase=file:"$basepath"/shared.jar \
   -Djava.security.policy="$basepath"/policy \
-  ca.polymtl.inf8480.tp2.loadBalancer.LoadBalancer
+  ca.polymtl.inf8480.tp2.loadBalancer.LoadBalancer $*
