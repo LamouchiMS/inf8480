@@ -1,23 +1,31 @@
 # Supposition
+
 Serveur calcule une operation a la fois
 
-# Config generale
+## Config generale
+
 Repertoire des noms => IP fixe
 Load balancer => IP fixe
 Serveurs => m et p aleatoires
 Load balancer => Mode securise ou pas
 
 ## Creation serveur
-# Serveur
+
+## Serveur
+
 Repertoire des noms existe?
 Non:
     Creer le repertoire (avec IP fixe)
 Notifier le repertoire que le serveur existe
-# Repertoire
+
+## Repertoire
+
 Enregistrer le serveur dans un fichier texte (pour construire la liste des IPs)
 
 ## Creation Load balancer
-# Repariteur
+
+### Repariteur
+
 Repertoire des noms existe?
 Non:
     Creer le repertoire (avec IP fixe)
@@ -25,11 +33,13 @@ S'authentifier (avec son IP et password)
 Recuperer la liste des serveurs
 
 ## Creation du client
+
 Load balancer existe?
 Non:
     Creer le load balancer (avec IP fixe)
 
-# Exemple execution
+## Exemple execution
+
 Creer client
 Client envoi chemin fichier au repariteur
 Si repartiteur est authentifie
