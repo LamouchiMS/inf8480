@@ -35,7 +35,7 @@ public class LoadBalancer implements LoadBalancerInterface {
 
     @Override
     public int calculate(String filePath) throws RemoteException {
-        // Authenticate first
+        
         return 0;
     }
 
