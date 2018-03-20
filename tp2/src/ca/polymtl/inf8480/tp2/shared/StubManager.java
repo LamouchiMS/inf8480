@@ -20,11 +20,10 @@ public class StubManager {
     public StubManager() {
     }
 
-    public static NameRepositoryInterface loadNameRepositoryStub(String hostname) {
+    public static NameRepositoryInterface loadNameRepositoryStub(String hostname, int port) {
         NameRepositoryInterface stub = null;
-
         try {
-            Registry registry = LocateRegistry.getRegistry(hostname);
+            Registry registry = LocateRegistry.getRegistry(hostname, port);
             stub = (NameRepositoryInterface) registry.lookup("nameRepository");
         } catch (NotBoundException e) {
             System.out.println("Erreur: Le nom '" + e.getMessage() + "' n'est pas défini dans le registre.");
@@ -37,11 +36,11 @@ public class StubManager {
         return stub;
     }
 
-    public static ServerInterface loadServerStub(String hostname) {
+    public static ServerInterface loadServerStub(String hostname, int port) {
         ServerInterface stub = null;
 
         try {
-            Registry registry = LocateRegistry.getRegistry(hostname, 5009);
+            Registry registry = LocateRegistry.getRegistry(hostname, port);
             stub = (ServerInterface) registry.lookup("server");
         } catch (NotBoundException e) {
             System.out.println("Erreur: Le nom '" + e.getMessage() + "' n'est pas défini dans le registre.");
@@ -54,14 +53,14 @@ public class StubManager {
         return stub;
     }
 
-    public static void registerNameRepositoryStub(NameRepository instance) {
+    public static void registerNameRepositoryStub(NameRepository instance, int port) {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
         try {
             NameRepositoryInterface stub = (NameRepositoryInterface) UnicastRemoteObject.exportObject(instance, 0);
 
-            Registry registry = LocateRegistry.getRegistry();
+            Registry registry = LocateRegistry.getRegistry(port);
             registry.rebind("nameRepository", stub);
             System.out.println("Name repository ready.");
         } catch (ConnectException e) {
@@ -73,7 +72,7 @@ public class StubManager {
         }
     }
 
-    public static void registerLoadBalancerStub(LoadBalancer instance) {
+    public static void registerLoadBalancerStub(LoadBalancer instance, int port) {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
@@ -81,7 +80,7 @@ public class StubManager {
         try {
             LoadBalancerInterface stub = (LoadBalancerInterface) UnicastRemoteObject.exportObject(instance, 0);
 
-            Registry registry = LocateRegistry.getRegistry();
+            Registry registry = LocateRegistry.getRegistry(port);
             registry.rebind("loadBalancer", stub);
             System.out.println("Load balancer ready.");
         } catch (ConnectException e) {
@@ -97,7 +96,6 @@ public class StubManager {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
-
         try {
             ServerInterface stub = (ServerInterface) UnicastRemoteObject.exportObject(instance, 0);
             Registry registry = LocateRegistry.getRegistry(port);

@@ -38,6 +38,7 @@ public class FileManager {
             fw = new FileWriter(filepath, true);
             bw = new BufferedWriter(fw);
             bw.write(content + "\n");
+            bw.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

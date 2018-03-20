@@ -27,18 +27,20 @@ import ca.polymtl.inf8480.tp2.shared.Config;
 import ca.polymtl.inf8480.tp2.shared.FileManager;;
 
 public class NameRepository implements NameRepositoryInterface {
+    private int port;
 
-    public NameRepository() {
+    public NameRepository(int port) {
         super();
+        this.port = port;
     }
 
     public static void main(String[] args) {
-        NameRepository nameRepository = new NameRepository();
+        NameRepository nameRepository = new NameRepository(Integer.parseInt(args[0]));
         nameRepository.run();
     }
 
     private void run() {
-        StubManager.registerNameRepositoryStub(this);
+        StubManager.registerNameRepositoryStub(this, port);
     }
 
     @Override
@@ -50,9 +52,8 @@ public class NameRepository implements NameRepositoryInterface {
 
     @Override
     public ArrayList<String> getServerList() throws RemoteException {
-
-        System.out.println("getting the server list");
-        String rawServers = FileManager.readFile("nameRepo.txt");
+        System.out.println("Getting the list of servers");
+        String rawServers = FileManager.readFile("serversIpList.txt");
         String[] lines = rawServers.split(System.lineSeparator());
         ArrayList<String> cleanLines = new ArrayList<>();
         int MIN_IP_LENGTH = 7;
@@ -61,7 +62,6 @@ public class NameRepository implements NameRepositoryInterface {
             if (l.length() > MIN_IP_LENGTH) {
                 cleanLines.add(l);
                 System.out.println(l);
-
             }
         }
         return cleanLines;

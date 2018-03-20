@@ -39,14 +39,15 @@ public class Server implements ServerInterface {
 
     public Server(int capacity, int malicePercentage, int port) {
         super();
-
+        
         q = capacity;
         m = malicePercentage;
         this.port = port;
-
+        
         Config configuration = new Config();
         String nameRepositoryIP = configuration.getNameRepositoryIP();
-        nameRepositoryStub = StubManager.loadNameRepositoryStub(nameRepositoryIP);
+        int nameRepositoryPort = configuration.getNameRepositoryPort();        
+        nameRepositoryStub = StubManager.loadNameRepositoryStub(nameRepositoryIP, nameRepositoryPort);
     }
 
     public static void main(String[] args) {
@@ -59,11 +60,11 @@ public class Server implements ServerInterface {
         }
     }
 
-    private boolean isIpAlreadyWritten() {
-        String content = FileManager.readFile("nameRepo.txt");
+    private boolean isIpAlreadyWritten(String ipAddress) {
+        String content = FileManager.readFile("serversIpList.txt");
         String[] lines = content.split(System.lineSeparator());
         for (String line : lines) {
-            if (line.trim().equals(this.ipAddress.trim())) {
+            if (line.trim().equals(ipAddress.trim())) {
                 return true;
             }
         }
@@ -78,15 +79,16 @@ public class Server implements ServerInterface {
         try {
             this.ipAddress = InetAddress.getLocalHost().getHostAddress();
             System.setProperty("java.rmi.sever.hostname", ipAddress);
-            FileManager.appendToFile("nameRepo.txt", ipAddress);
+            if (!this.isIpAlreadyWritten(ipAddress)) {
+                FileManager.appendToFile("serversIpList.txt", ipAddress);
+            }
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
     }
 
     public void run() {
-        if (!this.isIpAlreadyWritten())
-            this.registerIPinFile();
+        this.registerIPinFile();
         StubManager.registerServerStub(this, port);
     }
 

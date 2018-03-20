@@ -5,7 +5,9 @@ import java.io.*;
 public class Config {
     private final String configFileName = "config.txt";
     private String loadBalancerIP;
+    private String loadBalancerPort;
     private String nameRepositoryIP;
+    private String nameRepositoryPort;
     private boolean loadBalancerIsSecure;
     private String loadBalancerUsername;
     private String loadBalancerPassword;
@@ -13,19 +15,29 @@ public class Config {
     public Config() {
         String rawConfig = this.getRawConfig();
         String[] lines = rawConfig.split(System.lineSeparator());
-        this.loadBalancerIP = lines[1].split(" ")[1];
-        this.nameRepositoryIP = lines[2].split(" ")[1];
-        this.loadBalancerIsSecure = lines[3].split(" ")[1].equalsIgnoreCase("true");
-        this.loadBalancerUsername = lines[4].split(" ")[1];
-        this.loadBalancerPassword = lines[5].split(" ")[1];
+        this.loadBalancerIP = lines[3].split(":")[0];
+        this.loadBalancerPort = lines[3].split(":")[1];
+        this.nameRepositoryIP = lines[5].split(":")[0];
+        this.nameRepositoryPort = lines[5].split(":")[1];
+        this.loadBalancerIsSecure = lines[7].equalsIgnoreCase("true");
+        this.loadBalancerUsername = lines[9];
+        this.loadBalancerPassword = lines[11];
     }
 
     public String getLoadBalancerIP() {
         return this.loadBalancerIP;
     }
 
+    public int getLoadBalancerPort() {
+        return Integer.parseInt(this.loadBalancerPort);
+    }
+
     public String getNameRepositoryIP() {
         return this.nameRepositoryIP;
+    }
+
+    public int getNameRepositoryPort() {
+        return Integer.parseInt(this.nameRepositoryPort);
     }
 
     public boolean isLoadBalancerSecure() {

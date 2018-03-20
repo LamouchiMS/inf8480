@@ -33,25 +33,29 @@ public class LoadBalancer implements LoadBalancerInterface {
     private String operationsFile;
     private NameRepositoryInterface nameRepositoryStub;
     private ServerInterface serverStub;
+    private int port;
 
-    public LoadBalancer(String username, String password, String operationsFilePath) {
-        // super();
-
-        // if (System.getSecurityManager() == null) {
-        //     System.setSecurityManager(new SecurityManager());
-        // }
+    public LoadBalancer(String username, String password, String operationsFilePath, int port) {
         this.operationsFile = operationsFilePath;
         this.username = username;
         this.password = password;
+        this.port = port;
 
         Config configuration = new Config();
         String nameRepositoryIP = configuration.getNameRepositoryIP();
-        nameRepositoryStub = StubManager.loadNameRepositoryStub(nameRepositoryIP);
+        int nameRepositoryPort = configuration.getNameRepositoryPort();
+        nameRepositoryStub = StubManager.loadNameRepositoryStub(nameRepositoryIP, nameRepositoryPort);
     }
 
     public static void main(String[] args) {
-        LoadBalancer loadBalancer = new LoadBalancer(args[0], args[1], args[2]);
+        LoadBalancer loadBalancer = new LoadBalancer(args[0], args[1], args[2], Integer.parseInt(args[3]));
         loadBalancer.run();
+    }
+
+    private int getOperationsLength(String filePath) {
+        String rawOperations = FileManager.readFile(filePath);
+        String[] operations = rawOperations.split(System.lineSeparator());
+        return operations.length;   
     }
 
     @Override
@@ -62,7 +66,7 @@ public class LoadBalancer implements LoadBalancerInterface {
         ArrayList<String> serverList = nameRepositoryStub.getServerList();
         ArrayList<ServerInterface> serverStubs = new ArrayList<>();
         for (String serverIP : serverList) {
-            serverStub = StubManager.loadServerStub(serverIP.trim());
+            serverStub = StubManager.loadServerStub(serverIP.trim(), 5003);
             serverStubs.add(serverStub);
         }
 
@@ -111,28 +115,32 @@ public class LoadBalancer implements LoadBalancerInterface {
             for (MyThread t : threads) {
                 try {
                     t.join();
-                    result += t.getResult();
+                    result += t.getResult() % 4000;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
 
-            long endTime = System.nanoTime(); //afficher le temps d'execution
-            float tempsExecution = (float) (endTime - startTime) / 1000000;
-            System.out.println("\nTemps d'exécution (ms) = " + Float.toString(tempsExecution) + " milliSecondes");
-            System.out.println("\nNombre d'opérations = " + operations.length + "\n");
+            long endTime = System.nanoTime();
         } else {
             // Mode non securise
         }
 
-        return result;
+        return result % 4000;
     }
 
     private void run() {
-        StubManager.registerLoadBalancerStub(this);
+        StubManager.registerLoadBalancerStub(this, port);
         // authenticate and calculate the operations of the file
         try {
-            calculate(operationsFile, username, password);
+            long startTime = System.nanoTime();            
+            int result = calculate(operationsFile, username, password);
+            long endTime = System.nanoTime();      
+            
+            float tempsExecution = (float) (endTime - startTime) / 1000000;
+            System.out.println("\nTemps d'exécution (ms) = " + Float.toString(tempsExecution) + " milliSecondes");
+            System.out.println("\nNombre d'opérations    = " + this.getOperationsLength(operationsFile));
+            System.out.println("\nReultat                = " + result + "\n");      
         } catch (RemoteException e) {
             e.printStackTrace();
         }

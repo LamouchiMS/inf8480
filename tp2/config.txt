@@ -1,6 +1,12 @@
 // Format de la configuration a ne pas changer
-loadBalancerIP 132.207.12.38
-nameRepositoryIP 132.207.12.38
-loadBalancerIsSecure true
-loadBalancerUsername inf8480
-loadBalancerPassword 1234
+
+// Load balancer -> IP:port
+192.168.1.102:5001
+// Name repository -> IP:port
+192.168.1.102:5002
+// Load balancer is secure -> boolean
+true
+// Load balancer username
+inf8480
+// Load balancer password
+1234
