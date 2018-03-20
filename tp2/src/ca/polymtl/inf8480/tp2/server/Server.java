@@ -71,7 +71,7 @@ public class Server implements ServerInterface {
         return false;
     }
 
-    private void registerIPinFile() {
+    private void registerHostInFile() {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
@@ -79,8 +79,9 @@ public class Server implements ServerInterface {
         try {
             this.ipAddress = InetAddress.getLocalHost().getHostAddress();
             System.setProperty("java.rmi.sever.hostname", ipAddress);
-            if (!this.isIpAlreadyWritten(ipAddress)) {
-                FileManager.appendToFile("serversIpList.txt", ipAddress);
+            System.setProperty("java.rmi.activation.port", port + "");
+            if (!this.isIpAlreadyWritten(ipAddress+":"+port)) {
+                FileManager.appendToFile("serversIpList.txt", ipAddress+":"+port);
             }
         } catch (UnknownHostException e) {
             e.printStackTrace();
@@ -88,7 +89,7 @@ public class Server implements ServerInterface {
     }
 
     public void run() {
-        this.registerIPinFile();
+        this.registerHostInFile();
         StubManager.registerServerStub(this, port);
     }
 

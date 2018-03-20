@@ -65,8 +65,9 @@ public class LoadBalancer implements LoadBalancerInterface {
         // Get servers
         ArrayList<String> serverList = nameRepositoryStub.getServerList();
         ArrayList<ServerInterface> serverStubs = new ArrayList<>();
-        for (String serverIP : serverList) {
-            serverStub = StubManager.loadServerStub(serverIP.trim(), 5003);
+        for (String serverConfig : serverList) {
+            String[] parts = serverConfig.trim().split(":");
+            serverStub = StubManager.loadServerStub(parts[0], Integer.parseInt(parts[1]));
             serverStubs.add(serverStub);
         }
 
@@ -138,9 +139,10 @@ public class LoadBalancer implements LoadBalancerInterface {
             long endTime = System.nanoTime();      
             
             float tempsExecution = (float) (endTime - startTime) / 1000000;
-            System.out.println("\nTemps d'exécution (ms) = " + Float.toString(tempsExecution) + " milliSecondes");
-            System.out.println("\nNombre d'opérations    = " + this.getOperationsLength(operationsFile));
-            System.out.println("\nReultat                = " + result + "\n");      
+            System.out.println();
+            System.out.println("Temps d'exécution (ms) = " + Float.toString(tempsExecution) + " milliSecondes");
+            System.out.println("Nombre d'opérations    = " + this.getOperationsLength(operationsFile));
+            System.out.println("Resultat               = " + result + "\n");      
         } catch (RemoteException e) {
             e.printStackTrace();
         }

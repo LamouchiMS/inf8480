@@ -8,10 +8,9 @@ configFile="config.txt"
 # Operations file
 operationsFile="operations-588"
 
-# Server
-malice="2"
-capacity="2"
-serverPort="5003"
+# Servers
+servers={}
+serversLineStart=15
 
 # Load balancer
 loadBalancerLine=4
@@ -41,26 +40,16 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
         arrIN=(${line//:/ })
         nameRepositoryIP=${arrIN[0]}
         nameRepositoryPort=${arrIN[1]}
+    elif [ $i -ge $serversLineStart ]; then
+        idx=$((i - $serversLineStart))
+        servers[$idx]=$line
     fi;
 
     i=$(( i + 1 ))
 done < $configFile
 
-echo
-echo "Operations file\t\t"$operationsFile
-echo
-echo "Load balancer IP\t"$loadBalancerIP
-echo "Load balancer Port\t"$loadBalancerPort
-echo "Load balancer username\t"$loadBalancerUsername
-echo "Load balancer password\t"$loadBalancerPassword
-# echo "Load balancer Port\t"$loadBalancerPort
-echo
-echo "Name repository IP\t"$nameRepositoryIP
-echo "Name repository Port\t"$nameRepositoryPort
-echo
-
 echo "[*]\tCompiling"
-ant &
+ant > /dev/null &
 wait %1
 
 echo "[*]\tKilling previous rmiregistry processes"
@@ -68,12 +57,19 @@ killall rmiregistry &
 killall java &
 wait %1 %2
 
+# Recreate servers list
+echo "[*]\tRegenerating servers list"
+rm "serversIpList.txt"
+touch "serversIpList.txt"
+
 # rmiregistry w/ ports
 cd ./bin
-echo "[*]\tExecuting rmiregistry for each module w/ ports"
 rmiregistry $nameRepositoryPort &
 rmiregistry $loadBalancerPort &
-rmiregistry $serverPort &
+for index in ${!servers[@]}; do
+    serverPort=$(( index + 5003 ))
+    rmiregistry $serverPort &
+done
 sleep 3
 
 cd ..
@@ -82,13 +78,19 @@ echo "[*]\tStarting name repository"
 bash nameRepository $nameRepositoryPort &
 sleep 3
 
-# Start a server
-echo "[*]\tStarting a server"
-bash server $malice $capacity $serverPort &
+# Start servers
+echo "[*]\tStarting servers"
+for index in ${!servers[@]}; do
+    arrIN=(${servers[index]//:/ })
+    malice=${arrIN[1]}
+    capacity=${arrIN[2]}
+    serverPort=$(( index + 5003 ))
+    bash server $malice $capacity $serverPort &
+done
 sleep 3
 
 # Start load balancer
 echo "[*]\tStarting load balancer"
 bash loadBalancer $loadBalancerUsername $loadBalancerPassword $operationsFile $loadBalancerPort
 
-wait %4 %5 %6
+wait

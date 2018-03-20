@@ -10,3 +10,7 @@ true
 inf8480
 // Load balancer password
 1234
+// Servers => Format IP:malice:capacite
+// Ports automatiquement configurés a partir de 5003
+192.168.1.102:3:3
+192.168.1.102:3:2
