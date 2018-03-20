@@ -33,6 +33,7 @@ public class Server implements ServerInterface {
     private int m = 0; // malice
     private int q = 0; // nbr d'operations acceptable
     private int port = 0;
+    private String ipAddress = "";
     private NameRepositoryInterface nameRepositoryStub;
 
     public Server(int capacity, int malicePercentage, int port) {
@@ -43,7 +44,7 @@ public class Server implements ServerInterface {
         this.port = port; 
 
         Config configuration = new Config();
-        String nameRepositoryIP = configuration.getLoadBalancerIP();
+        String nameRepositoryIP = configuration.getNameRepositoryIP();
         nameRepositoryStub = loadNameRepositoryStub(nameRepositoryIP);
     }
 
@@ -81,7 +82,8 @@ public class Server implements ServerInterface {
 
             try {
                 System.setSecurityManager(new SecurityManager());
-                String ipAddress = InetAddress.getLocalHost().getHostAddress();
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+                System.setProperty("java.rmi.sever.hostname", ipAddress);
 
                 String content = readFile("nameRepo.txt");
                 String[] lines = content.split(System.lineSeparator());
@@ -141,13 +143,6 @@ public class Server implements ServerInterface {
         return stub;
     }
 
-    // private boolean authenticateLoadBalancer (){
-
-    //     //return loadBalancerStub.
-        
-    //     return false;
-    // }
-
     public boolean isAvailable(int u) {
         int refusingRate = 100 * (u - q) / (5 * q);
         int threshold = (int)Math.random() * 100;
@@ -158,12 +153,14 @@ public class Server implements ServerInterface {
         return q;
     }
 
-    public int calculateSum(String rawOperations) {
+    @Override
+    public int calculateSum(String rawOperations) throws RemoteException{
+
         String[] lines = rawOperations.split(System.lineSeparator());
         int sum = 0;
 
         for (int i = 0; i < lines.length; i++) {
-            String[] parts = lines[i].split("/");
+            String[] parts = lines[i].split(" ");
             sum = (sum + this.calculateLine(parts[0], parts[1])) % MODULO;
         }
 
@@ -211,5 +208,10 @@ public class Server implements ServerInterface {
         }
 
         return content;
+    }
+
+    public boolean loadBalancerIsAuthenticated(String username, String password)throws RemoteException
+    {
+        return nameRepositoryStub.authenticateLoadBalancer(username, password);
     }
 }

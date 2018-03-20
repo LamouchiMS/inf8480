@@ -4,5 +4,5 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface LoadBalancerInterface extends Remote {
-    public int calculate(String filepath, String username, String password) throws RemoteException;
+    public int calculate(String filePath, String username, String password) throws RemoteException;
 }

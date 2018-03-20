@@ -28,53 +28,63 @@ import ca.polymtl.inf8480.tp2.shared.Config;
 public class LoadBalancer implements LoadBalancerInterface {
     private String username;
     private String password;
+    private String operationsFile;
     private NameRepositoryInterface nameRepositoryStub;
     private ServerInterface serverStub;
 
-    public LoadBalancer() {
+    public LoadBalancer(String username, String password, String operationsFilePath) {
         super();
 
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
+        this.operationsFile = operationsFilePath;
+        this.username = username;
+        this.password = password;
+
         Config configuration = new Config();
         String nameRepositoryIP = configuration.getNameRepositoryIP();
         nameRepositoryStub = loadNameRepositoryStub(nameRepositoryIP);
+       
     }
 
     public static void main(String[] args) {
-        LoadBalancer loadBalancer = new LoadBalancer();
+        
+        LoadBalancer loadBalancer = new LoadBalancer(args[0], args[1], args[2]);
         loadBalancer.run();
     }
 
     @Override
     public int calculate(String filePath, String username, String password) throws RemoteException {
+        
         long startTime = System.nanoTime();
-
+      
         // Get servers
-        String[] serverList = nameRepositoryStub.getServerList();
-        System.out.println("after getting the server list...");
-        System.out.println(serverList);
+        ArrayList<String> serverList = nameRepositoryStub.getServerList();
+        
 
         ArrayList<ServerInterface> serverStubs = new ArrayList<>();
         for (String serverIP : serverList) {
-            serverStubs.add(loadServerStub(serverIP.trim()));
+            serverStub = loadServerStub(serverIP.trim());
+            serverStubs.add(serverStub);
         }
+
+        
 
         // Operations
         String rawOperations = readFile(filePath);
         String[] operations = rawOperations.split(System.lineSeparator());
+        
 
         // Threads
         ArrayList<MyThread> threads = new ArrayList<>();
         int result = -1;
 
         Config c = new Config();
-
-        System.out.println("ici 3...");
+        
         if (c.isLoadBalancerSecure()) {
+            
             // Secure mode
-
             int idx = 0;
             boolean lastOperation = false;
 
@@ -82,27 +92,37 @@ public class LoadBalancer implements LoadBalancerInterface {
                 for (ServerInterface computingServer : serverStubs) {
                     if (computingServer != null) {
                         int blockSize = computingServer.getQ();
-                        if (idx + computingServer.getQ() >= operations.length) {
+
+                        if ((idx + computingServer.getQ()) >= operations.length) {
+                            
                             blockSize = operations.length - idx;
                             lastOperation = true;
                         }
                         String rawBlock = "";
 
+                
                         for (int pointer = 0; pointer < blockSize; pointer++) {
-                            rawBlock.concat(operations[pointer + idx]).concat(System.lineSeparator());
+                            rawBlock += operations[pointer + idx] + '\n';
                         }
-
+                        
                         idx += blockSize;
 
-                        MyThread t = new MyThread(computingServer, rawBlock);
+                        
+
+
+                        MyThread t = new MyThread(username, password, computingServer, rawBlock);
                         t.start();
                         threads.add(t);
+                        
+                        if (lastOperation) //if last operation break
+						{
+							break;
+						}
                     }
                 }
             }
 
             // After all threads are done
-            System.out.println("ici 4...");
             for (MyThread t : threads) {
                 try {
                     t.join();
@@ -118,7 +138,7 @@ public class LoadBalancer implements LoadBalancerInterface {
             System.out.println("\nNombre d'opérations = " + operations.length + "\n");
 
         } else {
-
+            
         }
 
         return result;
@@ -136,8 +156,8 @@ public class LoadBalancer implements LoadBalancerInterface {
             registry.rebind("loadBalancer", stub);
             System.out.println("Load balancer ready.");
 
-            System.out.println("Calculating operations...");
-            calculate("operations-588", "inf8480", "1234" );
+            // authenticate and calculate the operations of the file
+            calculate(operationsFile, username, password);
            
 
         } catch (ConnectException e) {
@@ -168,15 +188,15 @@ public class LoadBalancer implements LoadBalancerInterface {
 
     private ServerInterface loadServerStub(String hostname) {
         ServerInterface stub = null;
-
+        
         try {
-            Registry registry = LocateRegistry.getRegistry(hostname);
+            Registry registry = LocateRegistry.getRegistry(hostname, 5009);
             stub = (ServerInterface) registry.lookup("server");
         } catch (NotBoundException e) {
             System.out.println("Erreur: Le nom '" + e.getMessage() + "' n'est pas défini dans le registre.");
         } catch (AccessException e) {
             System.out.println("Erreur: " + e.getMessage());
-        } catch (RemoteException e) {
+        } catch (RemoteException e) { 
             System.out.println("Erreur: " + e.getMessage());
         }
 

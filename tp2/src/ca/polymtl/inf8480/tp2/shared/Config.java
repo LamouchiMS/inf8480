@@ -29,7 +29,7 @@ public class Config {
     }
 
     public boolean isLoadBalancerSecure() {
-        return this.loadBalancerIsSecure;
+        return true;//this.loadBalancerIsSecure;
     }
 
     public String getLoadBalancerUsername() {

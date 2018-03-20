@@ -6,9 +6,9 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.rmi.registry.Registry;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.*;
 import java.net.*;
@@ -18,7 +18,10 @@ import java.io.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 
+import ca.polymtl.inf8480.tp2.shared.LoadBalancerInterface;
+import ca.polymtl.inf8480.tp2.shared.MyThread;
 import ca.polymtl.inf8480.tp2.shared.NameRepositoryInterface;
+import ca.polymtl.inf8480.tp2.shared.ServerInterface;
 import ca.polymtl.inf8480.tp2.shared.Config;
 
 public class NameRepository implements NameRepositoryInterface {
@@ -84,18 +87,21 @@ public class NameRepository implements NameRepositoryInterface {
     }
 
     @Override
-    public String[] getServerList() throws RemoteException {
+    public ArrayList<String> getServerList() throws RemoteException {
 
+        System.out.println("getting the server list");
         String rawServers = this.readFile("nameRepo.txt");
         String[] lines = rawServers.split(System.lineSeparator());
         ArrayList<String> cleanLines = new ArrayList<>();
         int MIN_IP_LENGTH = 7;
-        
+
         for (String l : lines) {
             if (l.length() > MIN_IP_LENGTH) {
                 cleanLines.add(l);
+                System.out.println(l);
+
             }
         }
-        return (String[]) cleanLines.toArray();
+        return cleanLines;
     }
 }
