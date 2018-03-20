@@ -5,6 +5,11 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.rmi.AccessException;
+import java.rmi.ConnectException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.*;
@@ -14,17 +19,13 @@ import java.nio.charset.Charset;
 import java.io.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.rmi.AccessException;
-import java.rmi.ConnectException;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-
 
 import ca.polymtl.inf8480.tp2.shared.ServerInterface;
+import ca.polymtl.inf8480.tp2.shared.StubManager;
 import ca.polymtl.inf8480.tp2.shared.NameRepositoryInterface;
 import ca.polymtl.inf8480.tp2.shared.Operations;
-import ca.polymtl.inf8480.tp2.shared.Config;;
-
+import ca.polymtl.inf8480.tp2.shared.Config;
+import ca.polymtl.inf8480.tp2.shared.FileManager;
 
 public class Server implements ServerInterface {
     final int MAX_OPERATIONS = 1000;
@@ -41,28 +42,11 @@ public class Server implements ServerInterface {
 
         q = capacity;
         m = malicePercentage;
-        this.port = port; 
+        this.port = port;
 
         Config configuration = new Config();
         String nameRepositoryIP = configuration.getNameRepositoryIP();
-        nameRepositoryStub = loadNameRepositoryStub(nameRepositoryIP);
-    }
-
-    private NameRepositoryInterface loadNameRepositoryStub(String hostname) {
-        NameRepositoryInterface stub = null;
-
-        try {
-            Registry registry = LocateRegistry.getRegistry(hostname);
-            stub = (NameRepositoryInterface) registry.lookup("nameRepository");
-        } catch (NotBoundException e) {
-            System.out.println("Erreur: Le nom '" + e.getMessage() + "' n'est pas défini dans le registre.");
-        } catch (AccessException e) {
-            System.out.println("Erreur: " + e.getMessage());
-        } catch (RemoteException e) {
-            System.out.println("Erreur: " + e.getMessage());
-        }
-
-        return stub;
+        nameRepositoryStub = StubManager.loadNameRepositoryStub(nameRepositoryIP);
     }
 
     public static void main(String[] args) {
@@ -75,77 +59,40 @@ public class Server implements ServerInterface {
         }
     }
 
-    public void run() {
-        if (System.getSecurityManager() == null) {
-            BufferedWriter bw = null;
-            FileWriter fw = null;
-
-            try {
-                System.setSecurityManager(new SecurityManager());
-                ipAddress = InetAddress.getLocalHost().getHostAddress();
-                System.setProperty("java.rmi.sever.hostname", ipAddress);
-
-                String content = readFile("nameRepo.txt");
-                String[] lines = content.split(System.lineSeparator());
-                boolean found = false;
-                for (String line : lines) {
-                    if (line.trim().equals(ipAddress.trim())) {
-                        found = true;
-                    }
-                }
-
-                if (!found) {
-                    fw = new FileWriter("nameRepo.txt", true);
-                    bw = new BufferedWriter(fw);
-                    bw.write(ipAddress + "\n");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (bw != null || fw != null)
-                        bw.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+    private boolean isIpAlreadyWritten() {
+        String content = FileManager.readFile("nameRepo.txt");
+        String[] lines = content.split(System.lineSeparator());
+        for (String line : lines) {
+            if (line.trim().equals(this.ipAddress.trim())) {
+                return true;
             }
+        }
+        return false;
+    }
+
+    private void registerIPinFile() {
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager());
         }
 
         try {
-            ServerInterface stub = (ServerInterface) UnicastRemoteObject.exportObject(this, 0);
-            Registry registry = LocateRegistry.getRegistry(port);
-            registry.rebind("server", stub);
-            System.out.println("Server ready.");
-        } catch (ConnectException e) {
-            System.err.println("Impossible de se connecter au registre RMI. Est-ce que rmiregistry est lancé ?");
-            System.err.println();
-            System.err.println("Erreur: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Erreur: " + e.getMessage());
+            this.ipAddress = InetAddress.getLocalHost().getHostAddress();
+            System.setProperty("java.rmi.sever.hostname", ipAddress);
+            FileManager.appendToFile("nameRepo.txt", ipAddress);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
         }
     }
 
-    // stub to communicate with the load balancer
-    private NameRepositoryInterface NameRepositoryInterfaceStub(String hostname) {
-        NameRepositoryInterface stub = null;
-
-        try {
-            Registry registry = LocateRegistry.getRegistry(hostname);
-            stub = (NameRepositoryInterface) registry.lookup("nameRepository");
-        } catch (NotBoundException e) {
-            System.out.println("Erreur: Le nom '" + e.getMessage() + "' n'est pas défini dans le registre.");
-        } catch (AccessException e) {
-            System.out.println("Erreur: " + e.getMessage());
-        } catch (RemoteException e) {
-            System.out.println("Erreur: " + e.getMessage());
-        }
-
-        return stub;
+    public void run() {
+        if (!this.isIpAlreadyWritten())
+            this.registerIPinFile();
+        StubManager.registerServerStub(this, port);
     }
 
     public boolean isAvailable(int u) {
         int refusingRate = 100 * (u - q) / (5 * q);
-        int threshold = (int)Math.random() * 100;
+        int threshold = (int) Math.random() * 100;
         return threshold < refusingRate;
     }
 
@@ -154,8 +101,7 @@ public class Server implements ServerInterface {
     }
 
     @Override
-    public int calculateSum(String rawOperations) throws RemoteException{
-
+    public int calculateSum(String rawOperations) throws RemoteException {
         String[] lines = rawOperations.split(System.lineSeparator());
         int sum = 0;
 
@@ -186,32 +132,7 @@ public class Server implements ServerInterface {
         }
     }
 
-    public static String readFile(String fileName) {
-        String content = null;
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(fileName));
-            StringBuilder sb = new StringBuilder();
-            String line = br.readLine();
-
-            while (line != null) {
-                sb.append(line);
-                sb.append(System.lineSeparator());
-                line = br.readLine();
-            }
-            content = sb.toString();
-
-            br.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return content;
-    }
-
-    public boolean loadBalancerIsAuthenticated(String username, String password)throws RemoteException
-    {
+    public boolean loadBalancerIsAuthenticated(String username, String password) throws RemoteException {
         return nameRepositoryStub.authenticateLoadBalancer(username, password);
     }
 }
