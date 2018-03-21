@@ -68,8 +68,10 @@ public class Config {
 
             br.close();
         } catch (FileNotFoundException e) {
+            System.err.println("File not found");
             e.printStackTrace();
         } catch (IOException e) {
+            System.err.println("IO Exception");
             e.printStackTrace();
         }
 

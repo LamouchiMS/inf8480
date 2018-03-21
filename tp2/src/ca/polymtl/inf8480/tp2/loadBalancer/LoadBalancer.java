@@ -8,6 +8,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.rmi.registry.Registry;
+import java.rmi.ConnectIOException;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -19,8 +20,13 @@ import java.io.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import ca.polymtl.inf8480.tp2.shared.LoadBalancerInterface;
-import ca.polymtl.inf8480.tp2.shared.MyThread;
 import ca.polymtl.inf8480.tp2.shared.NameRepositoryInterface;
 import ca.polymtl.inf8480.tp2.shared.ServerInterface;
 import ca.polymtl.inf8480.tp2.shared.Config;
@@ -36,7 +42,7 @@ public class LoadBalancer implements LoadBalancerInterface {
     private int port;
 
     public LoadBalancer(String username, String password, String operationsFilePath, int port) {
-        this.operationsFile = operationsFilePath;
+        this.operationsFile = "./operations/" + operationsFilePath;
         this.username = username;
         this.password = password;
         this.port = port;
@@ -58,24 +64,47 @@ public class LoadBalancer implements LoadBalancerInterface {
         return operations.length;   
     }
 
-    @Override
-    public int calculate(String filePath, String username, String password) throws RemoteException {
-        // Get servers
-        ArrayList<String> serverList = nameRepositoryStub.getServerList();
+    private ArrayList<ServerInterface> getServerStubs(ArrayList<String> serverList) {
         ArrayList<ServerInterface> serverStubs = new ArrayList<>();
         for (String serverConfig : serverList) {
             String[] parts = serverConfig.trim().split(":");
             serverStub = StubManager.loadServerStub(parts[0], Integer.parseInt(parts[1]));
             serverStubs.add(serverStub);
         }
+        return serverStubs;
+    }
+
+    private Callable<Integer> createCallableThread(ServerInterface serverStub, String rawOperations) {
+        return new Callable<Integer> () {
+            public Integer call() throws Exception {
+                int r = -1;
+                try {
+                    if (serverStub.loadBalancerIsAuthenticated(username, password)) {
+                        r = serverStub.calculateSum(rawOperations) % 4000;
+                    } else {
+                        System.out.println("Load balancer not authenticated");
+                    }
+                } catch(Exception e) {
+                    System.out.println("\n[!]\tDead stub detected");
+                } finally {
+                    return r;
+                }
+            }
+        };
+    }
+
+    @Override
+    public int calculate(String filePath, String username, String password) throws RemoteException {
+        // Get servers
+        ArrayList<String> serverList = nameRepositoryStub.getServerList();        
+        ArrayList<ServerInterface> serverStubs = this.getServerStubs(serverList);
 
         // Operations
-        String rawOperations = FileManager.readFile(filePath);
-        String[] operations = rawOperations.split(System.lineSeparator());
+        String[] operations = FileManager.readFile(filePath).split(System.lineSeparator());
         
         // Threads
-        ArrayList<Thread> threads = new ArrayList<>();
-        ArrayList<MyThread> runnables = new ArrayList<>();
+        ExecutorService executor = Executors.newCachedThreadPool();
+        List<Future> futures = new ArrayList<Future> ();
         int result = -1;
 
         Config c = new Config();
@@ -84,8 +113,9 @@ public class LoadBalancer implements LoadBalancerInterface {
             int idx = 0;
             boolean lastOperation = false;
 
-            while ((idx < operations.length) && !lastOperation) {
-                for (ServerInterface computingServer : serverStubs) {
+            while ((idx < operations.length) && !lastOperation && serverStubs.size() > 0) {
+                for (int i = 0; i < serverStubs.size() && !lastOperation; i++) {
+                    ServerInterface computingServer = serverStubs.get(i);
                     if (computingServer != null) {
                         int blockSize = computingServer.getQ();
 
@@ -94,37 +124,41 @@ public class LoadBalancer implements LoadBalancerInterface {
                             lastOperation = true;
                         }
                         String rawBlock = "";
-                
                         for (int pointer = 0; pointer < blockSize; pointer++) {
                             rawBlock += operations[pointer + idx] + '\n';
                         }
+                        final String rawData = rawBlock;
                         idx += blockSize;
 
-                        Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
-                            public void uncaughtException(Thread th, Throwable ex) {
-                                System.out.println("HHEEERRREEEE: " + ex);
-                            }
-                        };
-                        MyThread th = new MyThread(username, password, computingServer, rawBlock);
-                        Thread t = new Thread(th);
-                        t.setUncaughtExceptionHandler(h);
-                        t.start();
-                        threads.add(t);
-                        runnables.add(th);
-                        
-                        if (lastOperation) break;
+                        Callable<Integer> callable = this.createCallableThread(computingServer, rawData);
+                        futures.add(executor.submit(callable));
+                    } else {                         
+                        System.out.println("Stub is down at index = "+i+" => skip & re-distribute workload");
                     }
                 }
-            }
 
-            // After all threads are done
-            for (int i = 0; i < threads.size(); i++) {
-                try {
-                    threads.get(i).join();
-                    result += runnables.get(i).getResult() % 4000;
-                } catch (Exception e) {
-                    e.printStackTrace();
+                // Wait for threads before next interation
+                for (int i = 0; i < futures.size(); i++) {
+                    try {
+                        int tmpRes = (int) futures.get(i).get();
+                        if(tmpRes == -1) {
+                            System.out.println("[+]\tDead stub is at "+serverList.get(i)+"\t=> Marked");
+                            serverStubs.remove(i);
+                            System.out.println("[+]\tStub removed from available list\t=> Re-distribute workload");
+                        } else {
+                            // Stub is fine
+                            result = (result + tmpRes) % 4000;
+                        }
+                    } catch (Exception e) {
+                        System.err.println(e.getMessage());
+                    } finally {
+                        futures.get(i).cancel(true);
+                    }
                 }
+                // Reload threads
+                executor.shutdownNow();
+                executor = Executors.newCachedThreadPool();
+                futures = new ArrayList<Future> ();
             }
         } else {
             // Mode non securise
@@ -137,6 +171,7 @@ public class LoadBalancer implements LoadBalancerInterface {
         StubManager.registerLoadBalancerStub(this, port);
         // authenticate and calculate the operations of the file
         try {
+            System.out.println("[*]\tCalculating...");
             long startTime = System.nanoTime();            
             int result = calculate(operationsFile, username, password);
             long endTime = System.nanoTime();      
@@ -147,6 +182,7 @@ public class LoadBalancer implements LoadBalancerInterface {
             System.out.println("Nombre d'opérations    = " + this.getOperationsLength(operationsFile));
             System.out.println("Resultat               = " + result + "\n");      
         } catch (RemoteException e) {
+            System.err.println("Error while running load balancer");
             e.printStackTrace();
         }
     }

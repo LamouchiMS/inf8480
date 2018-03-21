@@ -16,7 +16,6 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
 public class StubManager {
-
     public StubManager() {
     }
 
@@ -62,7 +61,7 @@ public class StubManager {
 
             Registry registry = LocateRegistry.getRegistry(port);
             registry.rebind("nameRepository", stub);
-            System.out.println("Name repository ready.");
+            System.out.println("[+]\tName repository ready");
         } catch (ConnectException e) {
             System.err.println("Impossible de se connecter au registre RMI. Est-ce que rmiregistry est lancé ?");
             System.err.println();
@@ -82,7 +81,7 @@ public class StubManager {
 
             Registry registry = LocateRegistry.getRegistry(port);
             registry.rebind("loadBalancer", stub);
-            System.out.println("Load balancer ready.");
+            System.out.println("[+]\tLoad balancer ready");
         } catch (ConnectException e) {
             System.err.println("Impossible de se connecter au registre RMI. Est-ce que rmiregistry est lancé ?");
             System.err.println();
@@ -100,7 +99,7 @@ public class StubManager {
             ServerInterface stub = (ServerInterface) UnicastRemoteObject.exportObject(instance, 0);
             Registry registry = LocateRegistry.getRegistry(port);
             registry.rebind("server", stub);
-            System.out.println("Server ready.");
+            System.out.println("[+]\tServer ready");
         } catch (ConnectException e) {
             System.err.println("Impossible de se connecter au registre RMI. Est-ce que rmiregistry est lancé ?");
             System.err.println();

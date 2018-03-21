@@ -19,7 +19,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 
 import ca.polymtl.inf8480.tp2.shared.LoadBalancerInterface;
-import ca.polymtl.inf8480.tp2.shared.MyThread;
+import ca.polymtl.inf8480.tp2.shared.MyRunnable;
 import ca.polymtl.inf8480.tp2.shared.NameRepositoryInterface;
 import ca.polymtl.inf8480.tp2.shared.ServerInterface;
 import ca.polymtl.inf8480.tp2.shared.StubManager;
@@ -52,18 +52,18 @@ public class NameRepository implements NameRepositoryInterface {
 
     @Override
     public ArrayList<String> getServerList() throws RemoteException {
-        System.out.println("Getting the list of servers");
+        System.out.println("[*]\tGetting the list of servers");
         String rawServers = FileManager.readFile("serversIpList.txt");
         String[] lines = rawServers.split(System.lineSeparator());
         ArrayList<String> cleanLines = new ArrayList<>();
         int MIN_IP_LENGTH = 7;
-
+        
         for (String l : lines) {
             if (l.length() > MIN_IP_LENGTH) {
                 cleanLines.add(l);
-                System.out.println(l);
             }
         }
+        System.out.println("[+]\tDone");
         return cleanLines;
     }
 }
