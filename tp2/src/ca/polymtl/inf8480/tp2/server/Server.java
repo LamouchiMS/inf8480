@@ -1,31 +1,11 @@
 package ca.polymtl.inf8480.tp2.server;
 
-import java.rmi.ConnectException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
-import java.rmi.AccessException;
-import java.rmi.ConnectException;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-
-import java.util.ArrayList;
-import java.util.Random;
+import java.rmi.*;
 import java.util.*;
 import java.net.*;
-import java.nio.file.*;
-import java.nio.charset.Charset;
+import java.nio.*;
 import java.io.*;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-
-import ca.polymtl.inf8480.tp2.shared.ServerInterface;
-import ca.polymtl.inf8480.tp2.shared.StubManager;
-import ca.polymtl.inf8480.tp2.shared.NameRepositoryInterface;
-import ca.polymtl.inf8480.tp2.shared.Operations;
-import ca.polymtl.inf8480.tp2.shared.Config;
-import ca.polymtl.inf8480.tp2.shared.FileManager;
+import ca.polymtl.inf8480.tp2.shared.*;
 
 public class Server implements ServerInterface {
     final int MAX_OPERATIONS = 1000;
@@ -83,7 +63,7 @@ public class Server implements ServerInterface {
             if (!this.isIpAlreadyWritten(ipAddress+":"+port)) {
                 FileManager.appendToFile("serversIpList.txt", ipAddress+":"+port);
             }
-        } catch (UnknownHostException e) {
+        } catch (java.net.UnknownHostException e) {
             System.err.println("Error while registering server");
             e.printStackTrace();
         }

@@ -1,19 +1,13 @@
 package ca.polymtl.inf8480.tp2.shared;
 
-import java.rmi.ConnectException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
+import java.rmi.*;
+import java.rmi.registry.*;
+import java.rmi.server.*;
 
 import ca.polymtl.inf8480.tp2.nameRepository.NameRepository;
 import ca.polymtl.inf8480.tp2.server.Server;
 import ca.polymtl.inf8480.tp2.loadBalancer.LoadBalancer;
 
-import java.rmi.AccessException;
-import java.rmi.ConnectException;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
 
 public class StubManager {
     public StubManager() {

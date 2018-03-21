@@ -1,9 +1,6 @@
 package ca.polymtl.inf8480.tp2.shared;
 
-import java.io.IOException;
 import java.io.*;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 
 public class FileManager {
     public static String readFile(String fileName) {

@@ -1,7 +1,6 @@
 package ca.polymtl.inf8480.tp2.shared;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
+import java.rmi.*;
 import java.util.ArrayList;
 
 public interface NameRepositoryInterface extends Remote {

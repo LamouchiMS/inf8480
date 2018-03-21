@@ -1,7 +1,6 @@
 package ca.polymtl.inf8480.tp2.shared;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
+import java.rmi.*;
 
 public interface ServerInterface extends Remote {
     int calculateSum(String rawOperations) throws RemoteException;
