@@ -60,8 +60,6 @@ public class LoadBalancer implements LoadBalancerInterface {
 
     @Override
     public int calculate(String filePath, String username, String password) throws RemoteException {
-        long startTime = System.nanoTime();
-      
         // Get servers
         ArrayList<String> serverList = nameRepositoryStub.getServerList();
         ArrayList<ServerInterface> serverStubs = new ArrayList<>();
@@ -76,7 +74,8 @@ public class LoadBalancer implements LoadBalancerInterface {
         String[] operations = rawOperations.split(System.lineSeparator());
         
         // Threads
-        ArrayList<MyThread> threads = new ArrayList<>();
+        ArrayList<Thread> threads = new ArrayList<>();
+        ArrayList<MyThread> runnables = new ArrayList<>();
         int result = -1;
 
         Config c = new Config();
@@ -90,7 +89,7 @@ public class LoadBalancer implements LoadBalancerInterface {
                     if (computingServer != null) {
                         int blockSize = computingServer.getQ();
 
-                        if ((idx + computingServer.getQ()) >= operations.length) {
+                        if ((idx + blockSize) >= operations.length) {
                             blockSize = operations.length - idx;
                             lastOperation = true;
                         }
@@ -99,13 +98,19 @@ public class LoadBalancer implements LoadBalancerInterface {
                         for (int pointer = 0; pointer < blockSize; pointer++) {
                             rawBlock += operations[pointer + idx] + '\n';
                         }
-                        
                         idx += blockSize;
 
-                        // Start thread
-                        MyThread t = new MyThread(username, password, computingServer, rawBlock);
+                        Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
+                            public void uncaughtException(Thread th, Throwable ex) {
+                                System.out.println("HHEEERRREEEE: " + ex);
+                            }
+                        };
+                        MyThread th = new MyThread(username, password, computingServer, rawBlock);
+                        Thread t = new Thread(th);
+                        t.setUncaughtExceptionHandler(h);
                         t.start();
                         threads.add(t);
+                        runnables.add(th);
                         
                         if (lastOperation) break;
                     }
@@ -113,21 +118,19 @@ public class LoadBalancer implements LoadBalancerInterface {
             }
 
             // After all threads are done
-            for (MyThread t : threads) {
+            for (int i = 0; i < threads.size(); i++) {
                 try {
-                    t.join();
-                    result += t.getResult() % 4000;
+                    threads.get(i).join();
+                    result += runnables.get(i).getResult() % 4000;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-
-            long endTime = System.nanoTime();
         } else {
             // Mode non securise
         }
 
-        return result % 4000;
+        return result;
     }
 
     private void run() {

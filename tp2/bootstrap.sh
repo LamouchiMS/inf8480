@@ -49,7 +49,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 done < $configFile
 
 echo "[*]\tCompiling"
-ant > /dev/null &
+ant &
 wait %1
 
 echo "[*]\tKilling previous rmiregistry processes"

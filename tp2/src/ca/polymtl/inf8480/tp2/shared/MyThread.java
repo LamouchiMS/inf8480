@@ -2,7 +2,7 @@ package ca.polymtl.inf8480.tp2.shared;
 
 import java.rmi.RemoteException;
 
-public class MyThread extends Thread {
+public class MyThread implements Runnable {
     public ServerInterface serverStub;
     public int result = 0;
     public String rawOperations;
@@ -21,16 +21,17 @@ public class MyThread extends Thread {
 
     @Override
     public void run() {
+        // On verifie si le repartiteur est authentifie par le seveur avant de commencer les operations
         try {
-            // On verifie si le repartiteur est authentifie par le seveur avant de commencer les operations
             if (serverStub.loadBalancerIsAuthenticated(this.usernameLb, this.passwordLb)) {
                 result = serverStub.calculateSum(this.rawOperations);
             } else {
                 System.out.println("Load balancer not authenticated");
                 result = 0;
             }
-        } catch (RemoteException e) {
-            System.out.println("Error while computing thread : " + e.getMessage());
+        }  catch (Exception ex) {
+            Thread t = Thread.currentThread();
+            t.getUncaughtExceptionHandler().uncaughtException(t, new Exception());
         }
     }
 
