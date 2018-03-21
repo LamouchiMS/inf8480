@@ -86,9 +86,9 @@ public class Server implements ServerInterface {
 
     @Override
     public int calculateSum(String rawOperations) throws RemoteException {
-        if (port == 5003) {
-            System.exit(0);
-        }
+        // if (port == 5003) {
+        //     System.exit(0);
+        // }
         String[] lines = rawOperations.split(System.lineSeparator());
         int sum = 0;
 

@@ -17,7 +17,6 @@
         <delete file="server.jar" />
         <delete file="nameRepository.jar" />
         <delete file="loadBalancer.jar" />
-        <delete file="client.jar" />
         <delete file="shared.jar" />
     </target>
     <target depends="init" name="build-class">
@@ -31,6 +30,5 @@
         <jar destfile="nameRepository.jar" basedir="bin" includes="ca/polymtl/inf8480/tp2/nameRepository/**" update="false" />
         <jar destfile="loadBalancer.jar" basedir="bin" includes="ca/polymtl/inf8480/tp2/loadBalancer/**" update="false" />
         <jar destfile="server.jar" basedir="bin" includes="ca/polymtl/inf8480/tp2/server/**" update="false" />
-        <jar destfile="client.jar" basedir="bin" includes="ca/polymtl/inf8480/tp2/client/**" update="false" />
     </target>
 </project>

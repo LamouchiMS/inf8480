@@ -6,7 +6,7 @@ i=1
 configFile="config.txt"
 
 # Operations file
-operationsFile="operations-588"
+operationsFile="operations-big"
 
 # Servers
 servers={}
@@ -49,7 +49,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 done < $configFile
 
 echo "[*]\tCompiling"
-ant &
+ant > /dev/null &
 wait %1
 
 echo "[*]\tKilling previous rmiregistry processes"
